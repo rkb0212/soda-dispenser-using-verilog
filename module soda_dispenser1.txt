@@ -1,0 +1,119 @@
+ module soda_dispenser1(
+    input clk,
+    input rst,
+    input [1:0] in,
+    output reg out,
+    output reg [1:0] change
+    );
+parameter S0 = 2'b00;
+parameter S1 = 2'b01;
+parameter S2 = 2'b11;
+
+reg [1:0] current_state, next_state;
+
+always @(posedge clk) begin
+    if (rst) begin
+        current_state <= S0;
+        next_state <= S0;
+        out <= 0;
+        change <= 2'b00;
+    end else begin
+        current_state <= next_state;
+        case (current_state)
+            S0: begin // 0 Rs
+                if (in == 2'b01) begin
+                    next_state <= S1;
+                    out <= 0;
+                end else if (in == 2'b11) begin
+                    next_state <= S2;
+                    out <= 0;
+                end else begin
+                    next_state <= S0;
+                    out <= 0;
+                end
+                change <= 2'b00;
+            end					 
+            S1: begin // 5 Rs
+                if (in == 2'b01) begin
+                    next_state <= S2;
+                    out <= 0;
+                end else if (in == 2'b11) begin
+                    next_state <= S0;
+                    out <= 1;
+                    change <= 2'b00;
+                end else begin
+                    next_state <= S0;
+                    out <= 0;
+                    change <= 2'b01;
+                end
+            end
+            S2: begin // 10 Rs
+                if (in == 2'b01) begin
+                    next_state <= S0;
+                    out <= 1;
+                    change <= 2'b00;
+                end else if (in == 2'b11) begin
+                    next_state <= S0;
+                    out <= 1;
+                    change <= 2'b01;
+                end else begin
+                    next_state <= S0;
+                    out <= 0;
+                    change <= 2'b11;
+                end
+            end
+        endcase
+    end
+end					 
+endmodule
+
+
+ module soda_dispenser1_tb;
+
+	// Inputs
+	reg clk;
+	reg rst;
+	reg [1:0] in;
+
+	// Outputs
+	wire out;
+	wire [1:0] change;
+
+	// Instantiate the Unit Under Test (UUT)
+	soda_dispenser1 uut (
+		.clk(clk), 
+		.rst(rst), 
+		.in(in), 
+		.out(out), 
+		.change(change)
+	);
+
+    initial begin
+        clk = 0;
+        rst = 1;
+        in = 2'b00;
+
+        #10 rst = 0;
+        #10 in = 2'b01; // insert Rs. 5 coin
+
+        #10 in = 2'b11; // insert Rs. 10 coin
+
+        #10 in = 2'b01; // insert Rs. 5 coin
+
+        #10 in = 2'b00; // select soda
+
+        #10 $finish;
+    end
+    always #5 clk = ~clk;	 
+      
+endmodule
+
+// soda_dispenser.ucf
+
+ NET "Clk"           LOC = P129  | IOSTANDARD = LVCMOS33 | PERIOD = 12MHz;
+ NET "rst"           LOC = P58   | PULLUP  | IOSTANDARD = LVCMOS33 | SLEW = SLOW | DRIVE = 12;
+ NET "in[0]"         LOC = P59   | PULLUP  | IOSTANDARD = LVCMOS33 | SLEW = SLOW | DRIVE = 12;
+ NET "in[1]"         LOC = P60   | PULLUP  | IOSTANDARD = LVCMOS33 | SLEW = SLOW | DRIVE = 12;
+ NET "out"           LOC = P55   | IOSTANDARD = LVCMOS33 | SLEW = SLOW | DRIVE = 12;
+ NET "change[0]"     LOC = P54   | IOSTANDARD = LVCMOS33 | SLEW = SLOW | DRIVE = 12;
+ NET "change[1]"     LOC = P51   | IOSTANDARD = LVCMOS33 | SLEW = SLOW | DRIVE = 12;
